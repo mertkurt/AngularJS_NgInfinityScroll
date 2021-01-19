@@ -1,0 +1,102 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <h2>AngularJS Infinity Scroll Kullanımı</h2>
+    <div ng-app="myApp" ng-controller="InfinityScrollController">
+        <div style="position:relative">
+            <span ng-show="IsLoading" class="loading">Bekleniyor...</span>
+            <div infinityscroll="NextPage()" style="height:500px; overflow:auto;">
+                <table class="table table-responsive table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>id</th>
+                            <th>Kitap Adı</th>
+                            <th>Yazar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="k in BookList" style="height:100px;">
+                            <td>{{k.ID}}</td>
+                            <td>{{k.Ad}}</td>
+                            <td>{{k.Yazar}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="~/Scripts/angular.min.js"></script>
+
+<script>
+
+    var app = angular.module('myApp', []);
+    app.controller('InfinityScrollController', ['$scope', '$http', function ($scope, $http) {
+        $scope.CurrentPage = 1;
+        $scope.TotalPage = 0;
+        $scope.BookList = [];
+
+        function GetKitapData(page) {
+            $scope.IsLoading = true;
+            $http({
+                method: 'GET',
+                url: '/Home/KitaplariGetir',
+                params: { 'sayfaNo': page }
+            }).then(function (response) {
+                angular.forEach(response.data.List, function (value) {
+                    $scope.BookList.push(value);
+                });
+                $scope.TotalPage = response.data.totalPage;
+                $scope.IsLoading = false;
+            }, function () {
+                $scope.IsLoading = false;
+            })
+        }
+
+        GetKitapData($scope.CurrentPage);
+
+        $scope.NextPage = function () {
+            if ($scope.CurrentPage < $scope.TotalPage) {
+                $scope.CurrentPage += 1;
+                GetKitapData($scope.CurrentPage);
+            }
+        }
+    }]);
+
+
+    app.directive('infinityscroll', function () {
+        return {
+            restrict: 'A',
+            link: function (scope, element, attrs) {
+                element.bind('scroll', function () {
+                    if ((element[0].scrollTop + element[0].offsetHeight) == element[0].scrollHeight) {
+
+                        scope.$apply(attrs.infinityscroll)
+                    }
+                });
+            }
+        }
+    });
+
+</script>
+
+
+<style type="text/css">
+    .loading {
+        position: absolute;
+        left: 48%;
+        top: 48%;
+        display: block;
+        padding: 25px;
+        background-color: yellow;
+        color: red;
+        border: 1px solid;
+        margin: 0 auto;
+    }
+</style>
